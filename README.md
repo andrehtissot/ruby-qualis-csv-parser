@@ -11,8 +11,7 @@ journal_qualis_filtered.csv # para a lista com resultados ligados a computação
 Para aqueles que queiram gerar as listas, basta seguir os passos abaixo.
 1º Passo:
 Caso não tenha o pacote libpoppler-dev em seu sistema Linux, o instale.
-# para deb-based systems:
-sudo apt-get install libpoppler-dev
+sudo apt-get install libpoppler-dev # para sistemas baseados em debian
 
 2º Passo:
 Em um ambiente linux, a partir do diretório downloads, execute:
