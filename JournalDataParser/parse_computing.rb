@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 QUALIS_PATH = File.absolute_path(File.dirname(__FILE__)+'/../')
 require 'csv'
 require "#{QUALIS_PATH}/JournalDataParser/qualisjournaldataparser.rb"
