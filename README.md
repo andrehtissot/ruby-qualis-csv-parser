@@ -1,7 +1,7 @@
 Parser do Qualis PDF para CSV
 ======================
 
-Para aqueles que necessitam o Qualis completo em um formato de tabelas, já estão disponíveis três versões:<br />
+Para aqueles que necessitam o Qualis completo em um formato de tabelas, já estão disponíveis no diretório parsed, em três versões:<br />
 journal_qualis.csv //para a versão completa da lista.<br />
 journal_qualis_computing.csv //para a lista com apenas os qualis específicos de computação.<br />
 journal_qualis_filtered.csv //para a lista com resultados ligados a computação.<br />
