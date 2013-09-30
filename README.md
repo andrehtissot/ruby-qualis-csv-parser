@@ -30,7 +30,7 @@ ruby parse_filtered.rb //para gerar a lista com resultados ligados a computaçã
 Parser do Qualis de Conferências em Computação de PDF para CSV
 ======================
 
-Para aqueles que necessitam o Qualis completo em um formato de tabelas, já estão disponíveis no diretório parsed, em três versões:<br />
+Para aqueles que necessitam o Qualis completo em um formato de tabelas, já estão disponíveis no diretório parsed como:<br />
 computation_conferences_qualis.csv //para a versão completa da lista.<br />
 <br />
 
