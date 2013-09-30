@@ -47,6 +47,8 @@ class QualisJournalDataParser
 			'\372' => 'ú', '\373' => 'û', '\374' => 'ü', '\375' => 'ý'},
 		convert_keys:[] #generated
 	}
+	FIELDS[:convert_keys] = FIELDS[:convert].keys
+	CHARSET_FIX[:convert_keys] = CHARSET_FIX[:convert].keys
 
 	def header
 		'ISSN,"Abbreviated Journal Title",Rank,Field,Status'
@@ -56,20 +58,13 @@ class QualisJournalDataParser
 		open(file_path, 'w') { |f| f.puts header }
 	end
 
-	def load_configurations
-		FIELDS[:convert_keys] = FIELDS[:convert].keys
-		CHARSET_FIX[:convert_keys] = CHARSET_FIX[:convert].keys
-	end
-
 	def generate_csv input_file_path, output_file_path, options
-		verbose_mode = options[:verbose] || false
-		filter_fields = options[:filter].nil? ? nil : (options[:filter].is_a?(Array) ? options[:filter] : [options[:filter]])
-
-		load_configurations
+		@verbose_mode = options[:verbose] || false
+		@filter_fields = options[:filter].nil? ? nil : (options[:filter].is_a?(Array) ? options[:filter] : [options[:filter]])
 
 		File.delete output_file_path rescue nil
 
-		create_file output_file_path unless File.size?(output_file_path)
+		create_file output_file_path
 
 		ignore_list = ['(Lista Completa)','(STATUS)','(ESTRATO)','(TÍTULO)','(ISSN)','(ÁREA DE AVALIAÇÃO)']
 
@@ -84,35 +79,33 @@ class QualisJournalDataParser
 		lines = text.split "\r\n"
 		lines = text.split "\n" if lines.size == 1
 
-		puts 'Rules loaded.' if verbose_mode
+		puts 'Rules loaded.' if @verbose_mode
 		device_gray_counter = 0
-		records = []
-		record = {}
-		total = 0
+		@records = []
+		1.upto(2000) { @records << {} }
+		@record_index = 0
+		@total = 0
 		skip_lines = 0
 
 		lines.each_with_index do |line, line_number|
-			if skip_lines > 0
-				skip_lines -= 1
+			if line == '[1 0 0 1 0 0] cm'
+				if device_gray_counter != 9
+					device_gray_counter += 1
+				else
+					print "\r#{@total} parsed" if @verbose_mode
+					@record_index+=1
+					@total+=1
+					if (@record_index >= 2000)
+						generate_csv_write_csv output_file_path
+						@records.each {|record| record.clear }
+						@record_index = 0
+					end
+					device_gray_counter = 0
+				end
 				next
 			end
-
-			next if line == '' || line == '()'
-			if line == '[1 0 0 1 0 0] cm'
-				if device_gray_counter == 9
-					total+=1
-					print "\r#{total} parsed" if verbose_mode
-					if (total % 10000 == 0) || (total > 93550)
-						records.reject! {|record| !(filter_fields.include?(record[:field]))} if filter_fields
-						generate_csv_write_csv records, output_file_path
-						records.clear
-					end
-					records << record
-					record = {}
-					device_gray_counter = 0
-				else
-					device_gray_counter += 1
-				end
+			if skip_lines != 0
+				skip_lines -= 1
 				next
 			end
 			next if (line[0] != '(') ||
@@ -122,15 +115,15 @@ class QualisJournalDataParser
 				(line =~ /\([A-Z][a-z]+\s\d\d\s[A-Z][a-z]+\s\d{4}\s\d\d:\d\d:\d\d\)/)
 
 			if line =~ /\(\d{4}-\w{4}\)/
-				record = generate_csv_set records, record, :issn, (line.match(/\d{4}-\w{4}/)[0])
+				generate_csv_set :issn, (line.match(/\d{4}-\w{4}/)[0])
 				next
 			end
 			if ranks_possibilities_to_check.include? line
-				record = generate_csv_set records, record, :rank, decapsulate_string(line)
+				generate_csv_set :rank, decapsulate_string(line)
 				next
 			end
 			if stati_possibilities_to_check.include? line
-				record = generate_csv_set records, record, :status, decapsulate_string(line)
+				generate_csv_set :status, decapsulate_string(line)
 				next
 			end
 			if line[line.length-1] == '\\'
@@ -153,44 +146,45 @@ class QualisJournalDataParser
 				next
 			end
 			if fields_convert_keys_to_check.include? line
-				record = generate_csv_convert_and_set_field records, record, decapsulate_string(line)
+				generate_csv_convert_and_set_field decapsulate_string(line)
 				next
 			end
 			if fields_to_accept.include?(line) || fields_to_ignore.include?(line)
-				record = generate_csv_set records, record, :field, decapsulate_string(line)
+				generate_csv_set :field, decapsulate_string(line)
 				next
 			end
 			if line.length > 2 && line[line.length-1] == ')'
-	 			record = generate_csv_set records, record, :journal, decapsulate_string(line)
+	 			generate_csv_set :journal, decapsulate_string(line)
 		 		next
 		 	end
 		end
 
-		records.reject! {|record| !(filter_fields.include?(record[:field]))} if filter_fields
-		generate_csv_write_csv records, output_file_path
-		print "\n" if verbose_mode
+		@records.reject! {|record| record.empty?}
+		generate_csv_write_csv output_file_path
+		print "\n" if @verbose_mode
 	end
 
 	private
 	def decapsulate_string string
 		("#{(string.match(/\((.+)\)/) || [])[1]}").gsub("\\(", '(').gsub("\\)", ')')
 	end
-	def generate_csv_set records, record, attribute, line
-		if (attribute == :journal) && !(record[:journal].nil?) && record[:status].nil?
-			record[:journal] = "#{record[:journal]} #{line}"
-		elsif record[attribute].nil?
-			record[attribute] = line
+	def generate_csv_set attribute, line
+		if (attribute == :journal) && !(@records[@record_index][:journal].nil?) &&
+			@records[@record_index][:status].nil?
+			@records[@record_index][:journal] = "#{@records[@record_index][:journal]} #{line}"
+		elsif @records[@record_index][attribute].nil?
+			@records[@record_index][attribute] = line
 		end
-		record
 	end
-	def generate_csv_convert_and_set_field records, record, line
+	def generate_csv_convert_and_set_field line
 		FIELDS[:convert].each do |field_to_convert|
-			return generate_csv_set(records, record, :field, field_to_convert[1]) if field_to_convert[0] == line
+			return generate_csv_set(:field, field_to_convert[1]) if field_to_convert[0] == line
 		end
 	end
-	def generate_csv_write_csv records, output_file_path
+	def generate_csv_write_csv output_file_path
+		writting_records = @filter_fields ? (@records.reject {|record| !(@filter_fields.include?(record[:field]))}) : @records
 		CSV.open(output_file_path, "a+b") do |csv|
-			records.each do |record|
+			writting_records.each do |record|
 				csv << [record[:issn], record[:journal], record[:rank], record[:field], record[:status]]
 			end
 		end
