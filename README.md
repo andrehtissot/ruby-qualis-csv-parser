@@ -1,4 +1,4 @@
-Parser do Qualis PDF para CSV
+Parser do Qualis de Revistas de PDF para CSV
 ======================
 
 Para aqueles que necessitam o Qualis completo em um formato de tabelas, já estão disponíveis no diretório parsed, em três versões:<br />
@@ -25,3 +25,19 @@ ruby parse_all.rb //para gerar a versão completa da lista.<br />
 ruby parse_computing.rb //para gerar a lista com apenas os qualis específicos de computação.<br />
 ruby parse_filtered.rb //para gerar a lista com resultados ligados a computação.
 
+
+
+Parser do Qualis de Conferências em Computação de PDF para CSV
+======================
+
+Para aqueles que necessitam o Qualis completo em um formato de tabelas, já estão disponíveis no diretório parsed, em três versões:<br />
+computation_conferences_qualis.csv //para a versão completa da lista.<br />
+<br />
+
+Para aqueles que queiram gerar as listas, basta seguir o passo abaixo.<br />
+1º Passo:<br />
+Instale ruby caso não o tenha (https://rvm.io/).
+
+2º Passo:<br />
+Rode o parser de sua preferência em ComputationConferencesDataParser:<br />
+ruby parse_all.rb //para gerar a versão completa da lista.<br />
